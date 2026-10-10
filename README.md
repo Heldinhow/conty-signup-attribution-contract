@@ -142,18 +142,12 @@ loses as `superseded` to the later referral touch; the unknown-channel
 link is kept as a rejected row; the community link opened after signup is
 kept but loses as `after_signup`.
 
-## AI usage
+## Uso de IA
 
-### Done with AI
+### Feito com IA
 
-Stack analysis review, spec-flow gap analysis, the spec and ticket texts,
-and the first drafts of `attribution.py`, `test_attribution.py`, and this
-README were generated with AI assistance (OpenCode agent session).
+Planejamento com IA para alinhar a spec; quebra da spec em tickets; implementação com IA; review final com IA (código vs spec).
 
-### Human review
+### Revisado por humano
 
-The human (repo owner) decided the stack, the winning rule, the 30-day
-window, the dedup scope, the link payload, the store shape, and the audit
-response shape across grilling rounds Q1–Q14; approved the spec, the
-ticket breakdown, and every gap fix; and must run the suite and review
-this diff before pushing.
+Revisei a spec e os tickets; revisão manual das diffs.
