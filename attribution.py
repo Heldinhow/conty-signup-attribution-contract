@@ -29,6 +29,22 @@ def _parse_instant(value):
         return None
 
 
+def _channel_id(channel, values):
+    """Return the channel-specific identifier pair, or {} when absent."""
+    key = _CHANNEL_IDS[channel]
+    return {key: values[key]} if values.get(key) else {}
+
+
+def _bump_seen(entries, matches, seen_at):
+    """Bump seen_count on the first matching entry; None when no match."""
+    for entry in entries:
+        if matches(entry):
+            entry["seen_count"] += 1
+            entry["seen_at"] = seen_at
+            return entry
+    return None
+
+
 def parse_link(url):
     """Parse an attribution link into a touch record (webview-safe).
 
@@ -40,10 +56,10 @@ def parse_link(url):
         query = parse_qs(urlparse(url).query)
     except (ValueError, AttributeError):
         return {"valid": False, "reason_code": "invalid", "raw": url}
-    first = {key: values[0] for key, values in query.items() if values}
-    click_id = first.get("click_id")
-    channel = first.get("channel")
-    clicked_at = first.get("clicked_at")
+    params = {key: values[0] for key, values in query.items() if values}
+    click_id = params.get("click_id")
+    channel = params.get("channel")
+    clicked_at = params.get("clicked_at")
     if not click_id or not channel or not clicked_at:
         return {"valid": False, "reason_code": "missing_field", "raw": url}
     if channel not in _CHANNELS:
@@ -56,9 +72,7 @@ def parse_link(url):
         "channel": channel,
         "clicked_at": clicked_at,
     }
-    channel_id = _CHANNEL_IDS[channel]
-    if first.get(channel_id):
-        touch[channel_id] = first[channel_id]
+    touch.update(_channel_id(channel, params))
     return touch
 
 
@@ -74,11 +88,6 @@ def record_touch(store, parsed_touch, seen_at):
     if _parse_instant(seen_at) is None:
         raise ValueError("seen_at must be RFC3339 UTC")
     if not parsed_touch.get("valid"):
-        for entry in store["touches"]:
-            if not entry.get("valid") and entry.get("raw") == parsed_touch.get("raw"):
-                entry["seen_count"] += 1
-                entry["seen_at"] = seen_at
-                return store
         store["touches"].append(
             {
                 "valid": False,
@@ -89,11 +98,14 @@ def record_touch(store, parsed_touch, seen_at):
             }
         )
         return store
-    for entry in store["touches"]:
-        if entry.get("valid") and entry["click_id"] == parsed_touch["click_id"]:
-            entry["seen_count"] += 1
-            entry["seen_at"] = seen_at
-            return store
+    found = _bump_seen(
+        store["touches"],
+        lambda entry: entry.get("valid")
+        and entry["click_id"] == parsed_touch["click_id"],
+        seen_at,
+    )
+    if found is not None:
+        return store
     entry = dict(parsed_touch)
     entry["seen_at"] = seen_at
     entry["seen_count"] = 1
@@ -136,7 +148,6 @@ def resolve_signup(store, signup_at, window_days=ATTRIBUTION_WINDOW_DAYS):
             rows.append(_audit_row(entry, None, None))
 
     eligible = [row for row in rows if row["reason_code"] is None]
-    eligible.sort(key=lambda row: (row["_clicked_dt"], row["click_id"]))
     # Latest click wins; equal instants break by smallest click_id.
     winner = None
     if eligible:
@@ -164,9 +175,7 @@ def resolve_signup(store, signup_at, window_days=ATTRIBUTION_WINDOW_DAYS):
             "touches": rows,
         }
     origin = {"click_id": winner["click_id"], "channel": winner["channel"]}
-    channel_id = _CHANNEL_IDS[winner["channel"]]
-    if winner.get(channel_id):
-        origin[channel_id] = winner[channel_id]
+    origin.update(_channel_id(winner["channel"], winner))
     return {
         "install_id": store["install_id"],
         "signup_at": signup_at,
@@ -190,9 +199,7 @@ def _audit_row(entry, verdict, reason_code):
         "_clicked_dt": _parse_instant(entry.get("clicked_at")),
     }
     if entry.get("channel") in _CHANNEL_IDS:
-        channel_id = _CHANNEL_IDS[entry["channel"]]
-        if entry.get(channel_id):
-            row[channel_id] = entry[channel_id]
+        row.update(_channel_id(entry["channel"], entry))
     return row
 
 

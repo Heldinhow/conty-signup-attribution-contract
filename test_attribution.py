@@ -158,6 +158,19 @@ class TestEdges(unittest.TestCase):
             {"missing_field", "unknown_channel"},
         )
 
+    def test_non_utc_instant_formats_are_rejected(self):
+        base = "https://app.conty.com/open?click_id=c_fmt&channel=campaign&campaign_id=summer26&clicked_at="
+        for bad_instant in (
+            "2026-10-01T10:00:00+00:00",
+            "2026-10-01T10:00:00.000Z",
+            "2026-10-01 10:00:00",
+            "1780000000",
+        ):
+            with self.subTest(clicked_at=bad_instant):
+                touch = parse_link(base + bad_instant)
+                self.assertFalse(touch["valid"])
+                self.assertEqual(touch["reason_code"], "invalid")
+
     def test_empty_store_is_organic_without_touch(self):
         store = record_first_open("install-10", "2026-10-01T10:00:00Z")
         res = resolve_signup(store, "2026-10-02T10:00:00Z")

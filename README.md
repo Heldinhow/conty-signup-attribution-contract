@@ -72,8 +72,9 @@ https://app.conty.com/open?click_id=m_funk21&channel=community&community_id=funk
 ## Worked signup response
 
 Install `install-demo`, first open `2026-10-01T11:00:00Z`: campaign link
-opened twice, referral link once, one unknown-channel link once; signup
-`2026-10-03T10:00:00Z`. Verified output of `resolve_signup`:
+opened twice, referral link once, one unknown-channel link once, one
+community link opened after signup; signup `2026-10-03T10:00:00Z`.
+Verified output of `resolve_signup`:
 
 ```json
 {
@@ -120,6 +121,16 @@ opened twice, referral link once, one unknown-channel link once; signup
       "seen_count": 1,
       "verdict": "lost",
       "reason_code": "unknown_channel"
+    },
+    {
+      "click_id": "m_funk21",
+      "channel": "community",
+      "clicked_at": "2026-10-04T10:00:00Z",
+      "seen_at": "2026-10-04T10:00:00Z",
+      "seen_count": 1,
+      "verdict": "lost",
+      "reason_code": "after_signup",
+      "community_id": "funk-rj"
     }
   ]
 }
@@ -127,7 +138,8 @@ opened twice, referral link once, one unknown-channel link once; signup
 
 The re-clicked campaign touch stays a single row (`seen_count: 2`) but
 loses as `superseded` to the later referral touch; the unknown-channel
-link is kept as a rejected row.
+link is kept as a rejected row; the community link opened after signup is
+kept but loses as `after_signup`.
 
 ## AI usage
 
