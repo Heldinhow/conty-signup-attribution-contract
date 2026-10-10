@@ -132,6 +132,8 @@ def resolve_signup(store, signup_at, window_days=ATTRIBUTION_WINDOW_DAYS):
     first_open_dt = _parse_instant(store["first_open_at"])
     if signup_dt is None:
         raise ValueError("signup_at must be RFC3339 UTC")
+    if first_open_dt is None:
+        raise ValueError("first_open_at must be RFC3339 UTC")
     window_end = first_open_dt + timedelta(days=window_days)
 
     rows = []

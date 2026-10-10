@@ -43,7 +43,8 @@ inclusive; `ATTRIBUTION_WINDOW_DAYS = 30`, overridable per call). The
 latest eligible touch wins; equal instants at whole-second precision break
 by smallest `click_id`. Every touch is listed with `verdict` (`won` /
 `lost`) and `reason_code` (`won`, `superseded`, `out_of_window`,
-`after_signup`, `duplicate`-free single rows, `invalid` family).
+`after_signup`, `invalid` family); re-clicks collapse into a single row
+carrying `seen_count` instead of emitting extra rows.
 Post-signup touches persist in the audit but never win. No valid touch
 means `is_organic: true` with `organic_reason` (`no_touch`,
 `all_out_of_window`, `all_after_signup`, `all_invalid`, `no_valid_touch`

@@ -178,6 +178,21 @@ class TestEdges(unittest.TestCase):
         self.assertEqual(res["organic_reason"], "no_touch")
         self.assertEqual(res["touches"], [])
 
+    def test_resolve_is_repeatable(self):
+        store = record_first_open("install-11", "2026-10-01T10:05:00Z")
+        record_touch(store, parse_link(CAMPAIGN_URL), "2026-10-01T10:05:00Z")
+        first = resolve_signup(store, "2026-10-02T10:00:00Z")
+        second = resolve_signup(store, "2026-10-02T10:00:00Z")
+        self.assertEqual(first, second)
+
+    def test_invalid_instants_raise_value_error(self):
+        store = record_first_open("install-12", "2026-10-01T10:05:00Z")
+        with self.assertRaises(ValueError):
+            resolve_signup(store, "not-an-instant")
+        broken = {"install_id": "x", "first_open_at": "yesterday", "touches": []}
+        with self.assertRaises(ValueError):
+            resolve_signup(broken, "2026-10-02T10:00:00Z")
+
     def test_reinstall_starts_a_new_identity(self):
         old = record_first_open("install-old", "2026-10-01T10:00:00Z")
         record_touch(old, parse_link(CAMPAIGN_URL), "2026-10-01T10:00:00Z")
